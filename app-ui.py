@@ -1,14 +1,23 @@
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
 from PyQt6.QtCore import *
-import sys
+import sys, os
 import coord_converter
+
+basedir = os.path.dirname(__file__)
+
+try:
+    from ctypes import windll #only exists on windows
+    myappid = 'com.github.tim-c-1.coordconverter.version1'
+    windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except ImportError:
+    pass
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Coordinate Converter")
-        self.setWindowIcon(QIcon('icons/globe-green.png'))
+        self.setWindowIcon(QIcon(os.path.join(basedir, 'icons/globe-green.png')))
 
         tabBar = QTabWidget()
         tabBar.setTabPosition(QTabWidget.TabPosition.West)
