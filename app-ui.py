@@ -85,14 +85,16 @@ class transformCoords(QWidget):
         self.epsgSource = QComboBox()
         self.epsgSource.addItems(["4326", "26918"])
         self.epsgSource.setEditable(True)
-        self.epsgSource.lineEdit().setPlaceholderText("Source EPSG")
         self.epsgSource.setCurrentIndex(-1)
+        self.epsgSource.lineEdit().setPlaceholderText("Source EPSG")
+        self.epsgSource.setToolTip("Not sure what EPSG code you need? Check https://epsg.io")
 
         self.epsgTarget = QComboBox()
         self.epsgTarget.addItems(["26918", "4326"])
         self.epsgTarget.setEditable(True)
         self.epsgTarget.setCurrentIndex(-1)
         self.epsgTarget.lineEdit().setPlaceholderText("Target EPSG")
+        self.epsgTarget.setToolTip("Not sure what EPSG code you need? Check https://epsg.io")
 
         self.ddLat = QLineEdit()
         self.ddLat.setPlaceholderText("Latitude (DD)")
