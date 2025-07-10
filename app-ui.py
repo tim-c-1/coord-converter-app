@@ -15,7 +15,6 @@ class MainWindow(QMainWindow):
         self.ddEasting = ""
         self.ddmEasting = ""
         self.ddmNorthing = "" 
-        # self.setFixedSize(500,500)
 
         # widgets for ddm to dd conversion        
         self.ddmEasting = QLineEdit()
@@ -102,7 +101,6 @@ class MainWindow(QMainWindow):
     def use_ddm_out_checked(self, s):
         print(s == Qt.CheckState.Checked.value)
         if s == Qt.CheckState.Checked.value:
-            # print(s)
             self.ddLat.setText(str(self.ddNorthing))
             self.ddLon.setText(str(self.ddEasting))
             print(self.ddNorthing)
