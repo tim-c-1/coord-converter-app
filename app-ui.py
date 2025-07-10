@@ -3,12 +3,12 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 import sys
 import coord_converter
-from layout_colorwidget import Color
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Coordinate Converter")
+        self.setWindowIcon(QIcon('icons/globe-green.png'))
 
         tabBar = QTabWidget()
         tabBar.setTabPosition(QTabWidget.TabPosition.West)
@@ -32,16 +32,18 @@ class ddmConvert(QWidget):
 
         # widgets for ddm to dd conversion        
         self.ddmEasting = QLineEdit()
-        self.ddmEasting.setPlaceholderText("Latitude")
+        self.ddmEasting.setPlaceholderText("Latitude (DDM)")
+        self.ddmEasting.setToolTip("Latitude in degree decimal minutes. Must include N/S/E/W. \nEx. 39 17.398N")
         self.ddmNorthing = QLineEdit()
-        self.ddmNorthing.setPlaceholderText("Longitude")
+        self.ddmNorthing.setPlaceholderText("Longitude (DDM)")
+        self.ddmNorthing.setToolTip("Longitude in degree decimal minutes. Must include N/S/E/W. \nEx. 76 36.471W")
         self.ddmBtn = QPushButton("Submit")
 
         self.ddmBtn.pressed.connect(self.ddm_button_pressed)
 
         self.ddmOutputBox = QLabel("____")
         self.ddmOutputBox.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard) #flag for access by mouse and keyboard
-        ddmTitle = QLabel("Converter- DDM to DD")
+        ddmTitle = QLabel("DDM to DD Converter")
         
         font = ddmTitle.font()
         font.setPointSize(22)
@@ -56,7 +58,7 @@ class ddmConvert(QWidget):
         ddmLayout.addWidget(self.ddmBtn, 2, 0)
         ddmLayout.addWidget(self.ddmOutputBox, 2, 1)
 
-        ddmLayout.setContentsMargins(0,0,0,0)
+        ddmLayout.setContentsMargins(5,0,0,0)
 
         self.setLayout(ddmLayout)
 
@@ -94,10 +96,13 @@ class transformCoords(QWidget):
 
         self.ddLat = QLineEdit()
         self.ddLat.setPlaceholderText("Latitude (DD)")
+        self.ddLat.setToolTip("Latitude in decimal degrees. Ex. 39.285016")
         self.ddLon = QLineEdit()
         self.ddLon.setPlaceholderText("Longitude (DD)")
+        self.ddLon.setToolTip("Longitude in decimal degrees. Ex. -76.612080")
         
         self.useDDMOut = QCheckBox("Use results from ddm converter?")
+        self.useDDMOut.setToolTip("This will use any results created in the DDM to DD tab. It will clear your entries when unselected.")
         self.useDDMOut.setCheckState(Qt.CheckState.Unchecked)
         self.useDDMOut.stateChanged.connect(self.use_ddm_out_checked)
 
@@ -116,13 +121,15 @@ class transformCoords(QWidget):
 
         transformLayout = QGridLayout()
         transformLayout.addWidget(transformTitle, 0, 0, 1, 2)
-        transformLayout.addWidget(self.useDDMOut, 1, 0)
+        transformLayout.addWidget(self.useDDMOut, 1, 0, 1, 2)
         transformLayout.addWidget(self.ddLat, 2, 0)
         transformLayout.addWidget(self.ddLon, 2, 1)
         transformLayout.addWidget(self.epsgSource, 3, 0)
         transformLayout.addWidget(self.epsgTarget, 3, 1)
         transformLayout.addWidget(self.transformBtn, 4, 0)
         transformLayout.addWidget(self.transformOutputBox, 4, 1)
+
+        transformLayout.setContentsMargins(5,0,0,0)
 
         self.setLayout(transformLayout)
 
