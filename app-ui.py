@@ -289,6 +289,9 @@ class bulkConversion(QWidget):
         self.submitBtn = QPushButton("submit")
         self.submitBtn.pressed.connect(self.submit_btn_pressed)
 
+        # output label
+        self.outputLabel = QLabel("____")
+
         # page layout
         layout = QGridLayout()
         layout.addWidget(self.inputFileLabel, 0, 1, 1, 1)
@@ -301,11 +304,12 @@ class bulkConversion(QWidget):
         layout.addLayout(epsgSelections, 5, 0, 1, 2)
         layout.addLayout(checkOptions, 6, 0, 1, 2)
         layout.addWidget(self.submitBtn, 7, 0, 1, 1)
+        layout.addWidget(self.outputLabel, 7, 1, 1, 1)
         self.setLayout(layout)
 
     def input_file_btn_pressed(self):
         inputFile = QFileDialog().getOpenFileUrl(self, "Select File", filter="Text files (*.txt *.csv *.xyz);; All Files(*)") #push towards txt files, but allow any file selection
-        fpath = inputFile[0].toString().strip("/") #remove leading slash from path
+        fpath = inputFile[0].toLocalFile()
 
         if self.useCSV.isChecked():
             try:
@@ -357,53 +361,61 @@ class bulkConversion(QWidget):
 
     def output_file_btn_pressed(self):
         outputFile = QFileDialog().getSaveFileUrl(self, "Select File")
-        self.outPath = outputFile[0].toString().strip("/")
+        self.outPath = outputFile[0].toLocalFile()
         self.outputFileLabel.setText(outputFile[0].fileName())
 
         print(self.outPath)
 
     def submit_btn_pressed(self):
-        # outdf = self.df.copy()
-        eastingCol = self.easting.currentText()
-        northingCol = self.northing.currentText()
 
-        epsgSource = self.epsgSource.currentText()
-        epsgTarget = self.epsgTarget.currentText()
+        if hasattr(self, "outPath") or hasattr(self, "df"): # check that the filepaths have been selected
+            outdf = self.df.copy()
 
-        # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
-        # outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
+            useZ = self.checkZ.isChecked()
+            noAppend = self.checkAppend.isChecked()
+            noPreserve = self.checkPreserve.isChecked()
+            eastingCol = self.easting.currentText()
+            northingCol = self.northing.currentText()
 
-        useZ = self.checkZ.isChecked()
-        noAppend = self.checkAppend.isChecked()
-        noPreserve = self.checkPreserve.isChecked()
+            if useZ:
+                zCol = self.z.currentText()
 
-        options = [useZ, noAppend, noPreserve]
+            epsgSource = self.epsgSource.currentText()
+            epsgTarget = self.epsgTarget.currentText()
 
-        match options:
-            case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
-                print("case 1. x,y,z only")
+            # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
+            outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
 
-            case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
-                print("case 2. x,y only")
-            case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
-                print("case 3. all cols, dont append- replace")
-            case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
-                print("case 4. all cols, append to preserve og data")
-            case _:
+            options = [useZ, noAppend, noPreserve]
+            e = False # use to cleanly display case match outcome
+            print(outdf)
+
+            match options:
+                case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
+                    print("case 1. x,y,z only")
+                    outdf[["easting", "northing", zCol]].to_csv(self.outPath, index=False)
+                case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
+                    print("case 2. x,y only")
+                    outdf[["easting", "northing"]].to_csv(self.outPath, index=False)
+                case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
+                    print("case 3. all cols, dont append- replace")
+                    outdf[eastingCol], outdf[northingCol] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
+                    outdf.to_csv(self.outPath, index=False)
+                case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
+                    print("case 4. all cols, append to preserve og data")
+                    outdf.to_csv(self.outPath, index=False)
+                case _:
+                    e = True
+            
+            if e:
                 print("something went wrong")
-        
-        
-        
-                 
-
-        # if useZ:
-        #     zCol = self.z.currentText()
-        #     print(zCol)
-                    
-        
-        
-        # print(outdf)
-        
+                self.outputLabel.setText("something went wrong")
+            else:
+                self.outputLabel.setText("output saved to " + self.outPath)
+        else:
+            self.outputLabel.setText("enter in all the information!")
+            
+            
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
