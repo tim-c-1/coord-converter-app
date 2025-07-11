@@ -204,24 +204,39 @@ class bulkConversion(QWidget):
         self.inputFileBtn = QPushButton("Select input file")
         self.inputFileBtn.pressed.connect(self.input_file_btn_pressed)
 
-        delimLable = QLabel("Select delimiter")
-        self.useCSV = QCheckBox("csv")
-        self.useSpace = QCheckBox("comma")
-        self.useTab = QCheckBox("Tab")
+        delimLabel = QLabel("Select delimiter")
+        self.useCSV = QRadioButton("csv")
+        self.useSpace = QRadioButton("space")
+        self.useTab = QRadioButton("tab")
+
+        self.useCSV.setChecked(True)
+
+        radioGroup = QVBoxLayout()
+        radioGroup.addWidget(delimLabel)
+        radioGroup.addWidget(self.useCSV)
+        radioGroup.addWidget(self.useSpace)
+        radioGroup.addWidget(self.useTab)
 
         layout = QGridLayout()
-        layout.addWidget(self.inputFileBtn)
+        layout.addWidget(self.inputFileBtn, 0, 0, 1, 1)
+        layout.addLayout(radioGroup, 1, 0, 1, 1)
         self.setLayout(layout)
 
     def input_file_btn_pressed(self):
         inputFile = QFileDialog().getOpenFileUrl(self, "Select File", filter="Text files (*.txt *.csv *.xyz);; All Files(*)") #push towards txt files, but allow any file selection
-        
         fpath = inputFile[0].toString().strip("/") #remove leading slash from path
-        
-        # if self.csvBtn.checkedstae
 
-        df = pd.read_table(fpath)
-        print(df)
+        if self.useCSV.isChecked():
+            print("use csv")
+            # df = pd.read_table(fpath)
+            # print(df)
+        elif self.useSpace.isChecked():
+            print("use space")
+        elif self.useTab.isChecked():
+            # if self.csvBtn.checkedstate
+            print("use tab")
+            # df = pd.read_table(fpath)
+            # print(df)
         
 
 if __name__ == "__main__":
