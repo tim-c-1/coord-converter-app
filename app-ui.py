@@ -197,31 +197,36 @@ class bulkConversion(QWidget):
         # create layout with a selector dialog for a text/xyz file
         # user defined easting/northing columns
         # user defined output file and path
+        # check for ddm to dd needed?
         # output new text file with transformed coords
         # option for keeping old coords in column and appending new or replacing old with new
         # option for separator (comma, space, tab)
     
         # input file selection
-        self.inputFileBtn = QPushButton("Select input file")
+        self.inputFileBtn = QPushButton("select input file")
         self.inputFileBtn.pressed.connect(self.input_file_btn_pressed)
         self.inputFileLabel = QLabel("___")
         self.inputFileBtn.setToolTip("select a file with your x,y information to transform.\nhaving column names is helpful.")
 
         # delimiter selection
+        delimButtons = QButtonGroup(self)
         delimLabel = QLabel("Select delimiter")
         self.useCSV = QRadioButton("csv")
         self.useSpace = QRadioButton("space")
         self.useTab = QRadioButton("tab")
+        delimButtons.addButton(self.useCSV)
+        delimButtons.addButton(self.useSpace)
+        delimButtons.addButton(self.useTab)
 
         self.useCSV.setChecked(True)
 
-        radioGroup = QVBoxLayout()
+        radioGroup = QHBoxLayout()
         radioGroup.addWidget(delimLabel)
         radioGroup.addWidget(self.useCSV)
         radioGroup.addWidget(self.useSpace)
         radioGroup.addWidget(self.useTab)
 
-        # x,y column selection
+        # x,y,z column selection
         self.easting = QComboBox()
         self.northing = QComboBox()
         self.easting.setPlaceholderText("easting")
@@ -229,16 +234,73 @@ class bulkConversion(QWidget):
         self.northing.setPlaceholderText("northing")
         self.northing.setToolTip("select which column contains the northing information")
 
+        # use z selection
+        self.z = QComboBox()
+        self.z.setPlaceholderText("z")
+        self.z.setToolTip("select which column contains the z information if applicable.")
+        self.checkZ = QCheckBox("export z value?")
+        self.checkZ.setToolTip("Not needed unless you are choosing to export just x,y,z columns.")
+        self.checkZ.setCheckState(Qt.CheckState.Unchecked)
+        self.checkZ.stateChanged.connect(self.z_box_checked)
+
         columnGroup = QHBoxLayout()
         columnGroup.addWidget(self.easting)
         columnGroup.addWidget(self.northing)
+
+        zGroup = QHBoxLayout()
+        zGroup.addWidget(self.checkZ)
+        zGroup.addWidget(self.z)
+        self.z.setVisible(False)
+        self.checkZ.setMinimumHeight(21)
+
+        # epsg selections
+        self.epsgSource = QComboBox()
+        self.epsgSource.addItems(["4326","26918"])
+        self.epsgSource.setEditable(True)
+        self.epsgTarget = QComboBox()
+        self.epsgTarget.addItems(["26918", "4326"])
+        self.epsgTarget.setEditable(True)
+       
+        epsgSelections = QHBoxLayout()
+        epsgSelections.addWidget(self.epsgSource)
+        epsgSelections.addWidget(self.epsgTarget)
+
+        # output file selection
+        self.outputFileLabel = QLabel("____")
+        self.outputFileBtn = QPushButton("select output file")
+        self.outputFileBtn.pressed.connect(self.output_file_btn_pressed)
+
+        # option append columns or replace with new coords
+        self.checkAppend = QCheckBox("replace old coords?")
+        self.checkAppend.setToolTip("select to replace old columns with transformed coords.\nDefault is to append to end of column list.")
+        self.checkAppend.setCheckState(Qt.CheckState.Unchecked)
+
+        # option to export just x,y,z or preserve all columns
+        self.checkPreserve = QCheckBox("export just x,y,(z)?")
+        self.checkPreserve.setToolTip("select to export just the x,y,(z) columns.\nDefault is to preserve original structure.\nNote: export z value must be checked to include the z column.")
+        self.checkPreserve.setCheckState(Qt.CheckState.Unchecked)
+
+        # checkbox layout
+        checkOptions = QHBoxLayout()
+        checkOptions.addWidget(self.checkAppend)
+        checkOptions.addWidget(self.checkPreserve)
+
+        # submit button
+        self.submitBtn = QPushButton("submit")
+        self.submitBtn.pressed.connect(self.submit_btn_pressed)
 
         # page layout
         layout = QGridLayout()
         layout.addWidget(self.inputFileLabel, 0, 1, 1, 1)
         layout.addWidget(self.inputFileBtn, 0, 0, 1, 1)
-        layout.addLayout(radioGroup, 1, 0, 1, 1)
-        layout.addLayout(columnGroup, 2, 0, 1, 2)
+        layout.addLayout(radioGroup, 1, 0, 1, 2)
+        layout.addLayout(zGroup, 2, 0, 1, 2)
+        layout.addLayout(columnGroup, 3, 0, 1, 2)
+        layout.addWidget(self.outputFileLabel, 4, 1, 1, 1)
+        layout.addWidget(self.outputFileBtn, 4, 0, 1, 1)
+        layout.addLayout(epsgSelections, 5, 0, 1, 2)
+        layout.addLayout(checkOptions, 6, 0, 1, 2)
+        layout.addWidget(self.submitBtn, 7, 0, 1, 1)
         self.setLayout(layout)
 
     def input_file_btn_pressed(self):
@@ -246,45 +308,101 @@ class bulkConversion(QWidget):
         fpath = inputFile[0].toString().strip("/") #remove leading slash from path
 
         if self.useCSV.isChecked():
-            print("use csv")
             try:
-                df = pd.read_csv(fpath)
+                self.df = pd.read_csv(fpath)
                 self.inputFileLabel.setText(inputFile[0].fileName())
 
-                self.easting.addItems(df.columns)
-                self.northing.addItems(df.columns)
-                print(df)
+                self.easting.addItems(self.df.columns)
+                self.northing.addItems(self.df.columns)
+                self.z.addItems(self.df.columns)
+                print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
                 pass
         elif self.useSpace.isChecked():
-            print("use space")
             try:
-                df = pd.read_table(fpath, sep='\s+')
+                self.df = pd.read_table(fpath, sep='\s+')
                 self.inputFileLabel.setText(inputFile[0].fileName())
 
-                self.easting.addItems(df.columns)
-                self.northing.addItems(df.columns)
-                print(df)
+                self.easting.addItems(self.df.columns)
+                self.northing.addItems(self.df.columns)
+                self.z.addItems(self.df.columns)
+                print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
                 pass
         elif self.useTab.isChecked():
-            print("use tab")
             try:
-                df = pd.read_table(fpath, '/t')
+                self.df = pd.read_table(fpath, '/t')
                 self.inputFileLabel.setText(inputFile[0].fileName())
 
-                self.easting.addItems(df.columns)
-                self.northing.addItems(df.columns)
-                print(df)
+                self.easting.addItems(self.df.columns)
+                self.northing.addItems(self.df.columns)
+                self.z.addItems(self.df.columns)
+                print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
                 pass
             
+    def z_box_checked(self, s):
+        print(s == Qt.CheckState.Checked.value)
+        if s == Qt.CheckState.Checked.value:
+            
+            self.z.setVisible(True)
+        else:
+            self.z.setVisible(False)
+
+    def output_file_btn_pressed(self):
+        outputFile = QFileDialog().getSaveFileUrl(self, "Select File")
+        self.outPath = outputFile[0].toString().strip("/")
+        self.outputFileLabel.setText(outputFile[0].fileName())
+
+        print(self.outPath)
+
+    def submit_btn_pressed(self):
+        # outdf = self.df.copy()
+        eastingCol = self.easting.currentText()
+        northingCol = self.northing.currentText()
+
+        epsgSource = self.epsgSource.currentText()
+        epsgTarget = self.epsgTarget.currentText()
+
+        # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
+        # outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
+
+        useZ = self.checkZ.isChecked()
+        noAppend = self.checkAppend.isChecked()
+        noPreserve = self.checkPreserve.isChecked()
+
+        options = [useZ, noAppend, noPreserve]
+
+        match options:
+            case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
+                print("case 1. x,y,z only")
+
+            case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
+                print("case 2. x,y only")
+            case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
+                print("case 3. all cols, dont append- replace")
+            case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
+                print("case 4. all cols, append to preserve og data")
+            case _:
+                print("something went wrong")
+        
+        
+        
+                 
+
+        # if useZ:
+        #     zCol = self.z.currentText()
+        #     print(zCol)
+                    
+        
+        
+        # print(outdf)
         
 
 if __name__ == "__main__":
