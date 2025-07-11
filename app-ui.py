@@ -201,10 +201,13 @@ class bulkConversion(QWidget):
         # option for keeping old coords in column and appending new or replacing old with new
         # option for separator (comma, space, tab)
     
+        # input file selection
         self.inputFileBtn = QPushButton("Select input file")
         self.inputFileBtn.pressed.connect(self.input_file_btn_pressed)
         self.inputFileLabel = QLabel("___")
+        self.inputFileBtn.setToolTip("select a file with your x,y information to transform.\nhaving column names is helpful.")
 
+        # delimiter selection
         delimLabel = QLabel("Select delimiter")
         self.useCSV = QRadioButton("csv")
         self.useSpace = QRadioButton("space")
@@ -218,10 +221,24 @@ class bulkConversion(QWidget):
         radioGroup.addWidget(self.useSpace)
         radioGroup.addWidget(self.useTab)
 
+        # x,y column selection
+        self.easting = QComboBox()
+        self.northing = QComboBox()
+        self.easting.setPlaceholderText("easting")
+        self.easting.setToolTip("select which column contains the easting information")
+        self.northing.setPlaceholderText("northing")
+        self.northing.setToolTip("select which column contains the northing information")
+
+        columnGroup = QHBoxLayout()
+        columnGroup.addWidget(self.easting)
+        columnGroup.addWidget(self.northing)
+
+        # page layout
         layout = QGridLayout()
         layout.addWidget(self.inputFileLabel, 0, 1, 1, 1)
         layout.addWidget(self.inputFileBtn, 0, 0, 1, 1)
         layout.addLayout(radioGroup, 1, 0, 1, 1)
+        layout.addLayout(columnGroup, 2, 0, 1, 2)
         self.setLayout(layout)
 
     def input_file_btn_pressed(self):
@@ -233,6 +250,9 @@ class bulkConversion(QWidget):
             try:
                 df = pd.read_csv(fpath)
                 self.inputFileLabel.setText(inputFile[0].fileName())
+
+                self.easting.addItems(df.columns)
+                self.northing.addItems(df.columns)
                 print(df)
             except:
                 print("read failed")
@@ -243,6 +263,9 @@ class bulkConversion(QWidget):
             try:
                 df = pd.read_table(fpath, sep='\s+')
                 self.inputFileLabel.setText(inputFile[0].fileName())
+
+                self.easting.addItems(df.columns)
+                self.northing.addItems(df.columns)
                 print(df)
             except:
                 print("read failed")
@@ -253,6 +276,9 @@ class bulkConversion(QWidget):
             try:
                 df = pd.read_table(fpath, '/t')
                 self.inputFileLabel.setText(inputFile[0].fileName())
+
+                self.easting.addItems(df.columns)
+                self.northing.addItems(df.columns)
                 print(df)
             except:
                 print("read failed")
