@@ -24,6 +24,7 @@ from PyQt6.QtGui import *
 from PyQt6.QtCore import *
 import sys, os
 import coord_converter
+import pandas as pd
 
 basedir = os.path.dirname(__file__)
 
@@ -41,11 +42,12 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(QIcon(os.path.join(basedir, 'icons/globe-green.png')))
 
         tabBar = QTabWidget()
-        tabBar.setTabPosition(QTabWidget.TabPosition.West)
+        tabBar.setTabPosition(QTabWidget.TabPosition.North)
         tabBar.setMovable(False)
 
         tabBar.addTab(ddmConvert(), "DDM to DD")
         tabBar.addTab(transformCoords(), "Transform Coords")
+        tabBar.addTab(bulkConversion(), "Convert in bulk")
 
         self.setCentralWidget(tabBar)
         
@@ -187,6 +189,40 @@ class transformCoords(QWidget):
 
         transformedCoords = coord_converter.Conversions.transform_coords(lon, lat, epsgSource, epsgTarget)
         self.transformOutputBox.setText(str(transformedCoords))
+
+class bulkConversion(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        # create layout with a selector dialog for a text/xyz file
+        # user defined easting/northing columns
+        # user defined output file and path
+        # output new text file with transformed coords
+        # option for keeping old coords in column and appending new or replacing old with new
+        # option for separator (comma, space, tab)
+    
+        self.inputFileBtn = QPushButton("Select input file")
+        self.inputFileBtn.pressed.connect(self.input_file_btn_pressed)
+
+        delimLable = QLabel("Select delimiter")
+        self.useCSV = QCheckBox("csv")
+        self.useSpace = QCheckBox("comma")
+        self.useTab = QCheckBox("Tab")
+
+        layout = QGridLayout()
+        layout.addWidget(self.inputFileBtn)
+        self.setLayout(layout)
+
+    def input_file_btn_pressed(self):
+        inputFile = QFileDialog().getOpenFileUrl(self, "Select File", filter="Text files (*.txt *.csv *.xyz);; All Files(*)") #push towards txt files, but allow any file selection
+        
+        fpath = inputFile[0].toString().strip("/") #remove leading slash from path
+        
+        # if self.csvBtn.checkedstae
+
+        df = pd.read_table(fpath)
+        print(df)
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
