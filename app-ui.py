@@ -203,6 +203,7 @@ class bulkConversion(QWidget):
     
         self.inputFileBtn = QPushButton("Select input file")
         self.inputFileBtn.pressed.connect(self.input_file_btn_pressed)
+        self.inputFileLabel = QLabel("___")
 
         delimLabel = QLabel("Select delimiter")
         self.useCSV = QRadioButton("csv")
@@ -218,6 +219,7 @@ class bulkConversion(QWidget):
         radioGroup.addWidget(self.useTab)
 
         layout = QGridLayout()
+        layout.addWidget(self.inputFileLabel, 0, 1, 1, 1)
         layout.addWidget(self.inputFileBtn, 0, 0, 1, 1)
         layout.addLayout(radioGroup, 1, 0, 1, 1)
         self.setLayout(layout)
@@ -228,15 +230,35 @@ class bulkConversion(QWidget):
 
         if self.useCSV.isChecked():
             print("use csv")
-            # df = pd.read_table(fpath)
-            # print(df)
+            try:
+                df = pd.read_csv(fpath)
+                self.inputFileLabel.setText(inputFile[0].fileName())
+                print(df)
+            except:
+                print("read failed")
+                self.inputFileLabel.setText("file import failed")
+                pass
         elif self.useSpace.isChecked():
             print("use space")
+            try:
+                df = pd.read_table(fpath, sep='\s+')
+                self.inputFileLabel.setText(inputFile[0].fileName())
+                print(df)
+            except:
+                print("read failed")
+                self.inputFileLabel.setText("file import failed")
+                pass
         elif self.useTab.isChecked():
-            # if self.csvBtn.checkedstate
             print("use tab")
-            # df = pd.read_table(fpath)
-            # print(df)
+            try:
+                df = pd.read_table(fpath, '/t')
+                self.inputFileLabel.setText(inputFile[0].fileName())
+                print(df)
+            except:
+                print("read failed")
+                self.inputFileLabel.setText("file import failed")
+                pass
+            
         
 
 if __name__ == "__main__":
