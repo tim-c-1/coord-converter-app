@@ -169,7 +169,7 @@ class transformCoords(QWidget):
 
     
     def use_ddm_out_checked(self, s):
-        print(s == Qt.CheckState.Checked.value)
+        # print(s == Qt.CheckState.Checked.value)
         if s == Qt.CheckState.Checked.value:
             self.ddLat.setText(str(ddmConvert.ddNorthing))
             self.ddLon.setText(str(ddmConvert.ddEasting))
@@ -317,7 +317,7 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                print(self.df)
+                # print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
@@ -330,7 +330,7 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                print(self.df)
+                # print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
@@ -343,14 +343,14 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                print(self.df)
+                # print(self.df)
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
                 pass
             
     def z_box_checked(self, s):
-        print(s == Qt.CheckState.Checked.value)
+        # print(s == Qt.CheckState.Checked.value)
         if s == Qt.CheckState.Checked.value:
             
             self.z.setVisible(True)
@@ -362,7 +362,7 @@ class bulkConversion(QWidget):
         self.outPath = outputFile[0].toLocalFile()
         self.outputFileLabel.setText(outputFile[0].fileName())
 
-        print(self.outPath)
+        # print(self.outPath)
 
     def submit_btn_pressed(self):
 
@@ -392,21 +392,21 @@ class bulkConversion(QWidget):
 
             options = [useZ, noAppend, noPreserve]
             e = False # use to cleanly display case match outcome
-            print(outdf)
+            # print(outdf)
 
             match options:
                 case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
-                    print("case 1. x,y,z only")
+                    # print("case 1. x,y,z only")
                     outdf[["easting", "northing", zCol]].to_csv(self.outPath, index=False)
                 case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
-                    print("case 2. x,y only")
+                    # print("case 2. x,y only")
                     outdf[["easting", "northing"]].to_csv(self.outPath, index=False)
                 case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
-                    print("case 3. all cols, dont append- replace")
+                    # print("case 3. all cols, dont append- replace")
                     outdf[eastingCol], outdf[northingCol] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
                     outdf.to_csv(self.outPath, index=False)
                 case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
-                    print("case 4. all cols, append to preserve og data")
+                    # print("case 4. all cols, append to preserve og data")
                     outdf.to_csv(self.outPath, index=False)
                 case _:
                     e = True
