@@ -193,14 +193,6 @@ class transformCoords(QWidget):
 class bulkConversion(QWidget):
     def __init__(self):
         super().__init__()
-
-        # create layout with a selector dialog for a text/xyz file
-        # user defined easting/northing columns
-        # user defined output file and path
-        # check for ddm to dd needed?
-        # output new text file with transformed coords
-        # option for keeping old coords in column and appending new or replacing old with new
-        # option for separator (comma, space, tab)
     
         # input file selection
         self.inputFileBtn = QPushButton("select input file")
