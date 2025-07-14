@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
 
         tabBar.addTab(ddmConvert(), "DDM to DD")
         tabBar.addTab(transformCoords(), "Transform Coords")
-        tabBar.addTab(bulkConversion(), "Convert in bulk")
+        tabBar.addTab(bulkConversion(), "Convert File")
 
         self.setCentralWidget(tabBar)
         
@@ -229,10 +229,15 @@ class bulkConversion(QWidget):
         # x,y,z column selection
         self.easting = QComboBox()
         self.northing = QComboBox()
-        self.easting.setPlaceholderText("easting")
+        self.easting.setPlaceholderText("easting column")
         self.easting.setToolTip("select which column contains the easting information")
-        self.northing.setPlaceholderText("northing")
+        self.northing.setPlaceholderText("northing column")
         self.northing.setToolTip("select which column contains the northing information")
+
+        # ddm conversion needed?
+        self.ddmCheck = QCheckBox("Coords in DDM?")
+        self.ddmCheck.setToolTip("Coordinates must be in DD format. Check this box to convert the input.\nThis creates a new column with DD formatted coords. Using the x,y,(z) only option will not preserve this intermediate column.")
+        self.ddmCheck.setCheckState(Qt.CheckState.Unchecked)
 
         # use z selection
         self.z = QComboBox()
@@ -297,14 +302,15 @@ class bulkConversion(QWidget):
         layout.addWidget(self.inputFileLabel, 0, 1, 1, 1)
         layout.addWidget(self.inputFileBtn, 0, 0, 1, 1)
         layout.addLayout(radioGroup, 1, 0, 1, 2)
-        layout.addLayout(zGroup, 2, 0, 1, 2)
+        layout.addWidget(self.ddmCheck, 2, 0, 1, 2)
         layout.addLayout(columnGroup, 3, 0, 1, 2)
         layout.addWidget(self.outputFileLabel, 4, 1, 1, 1)
         layout.addWidget(self.outputFileBtn, 4, 0, 1, 1)
         layout.addLayout(epsgSelections, 5, 0, 1, 2)
         layout.addLayout(checkOptions, 6, 0, 1, 2)
-        layout.addWidget(self.submitBtn, 7, 0, 1, 1)
-        layout.addWidget(self.outputLabel, 7, 1, 1, 1)
+        layout.addLayout(zGroup, 7, 0, 1, 2)
+        layout.addWidget(self.submitBtn, 8, 0, 1, 1)
+        layout.addWidget(self.outputLabel, 8, 1, 1, 1)
         self.setLayout(layout)
 
     def input_file_btn_pressed(self):
@@ -376,6 +382,7 @@ class bulkConversion(QWidget):
             noPreserve = self.checkPreserve.isChecked()
             eastingCol = self.easting.currentText()
             northingCol = self.northing.currentText()
+            useDDM = self.ddmCheck.isChecked()
 
             if useZ:
                 zCol = self.z.currentText()
@@ -383,8 +390,13 @@ class bulkConversion(QWidget):
             epsgSource = self.epsgSource.currentText()
             epsgTarget = self.epsgTarget.currentText()
 
-            # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
-            outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
+            if useDDM:
+                outdf["eastDD"] = outdf[eastingCol].apply(coord_converter.Conversions.ddm_to_dd)
+                outdf["northDD"] = outdf[northingCol].apply(coord_converter.Conversions.ddm_to_dd)
+                outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row["eastDD"], row["northDD"], epsgSource, epsgTarget), axis=1))
+            else:
+                # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
+                outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
 
             options = [useZ, noAppend, noPreserve]
             e = False # use to cleanly display case match outcome
