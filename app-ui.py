@@ -98,12 +98,14 @@ class ddmConvert(QWidget):
         easting = self.ddmEasting.text()
         northing = self.ddmNorthing.text()
         
+        
         ddmConvert.ddEasting = coord_converter.Conversions.ddm_to_dd(easting)
         ddmConvert.ddNorthing = coord_converter.Conversions.ddm_to_dd(northing)
+        if ddmConvert.ddEasting is not None or ddmConvert.ddNorthing is not None:
+            self.ddmOutputBox.setText(str(ddmConvert.ddEasting) + ' ' + str(ddmConvert.ddNorthing))
+        else:
+            self.ddmOutputBox.setText("please check given coords")
 
-    
-        self.ddmOutputBox.setText(str(ddmConvert.ddEasting) + ' ' + str(ddmConvert.ddNorthing))
-        print(ddmConvert.ddEasting, ddmConvert.ddNorthing)
 
 class transformCoords(QWidget):
     def __init__(self):
@@ -169,7 +171,7 @@ class transformCoords(QWidget):
 
     
     def use_ddm_out_checked(self, s):
-        # print(s == Qt.CheckState.Checked.value)
+
         if s == Qt.CheckState.Checked.value:
             self.ddLat.setText(str(ddmConvert.ddNorthing))
             self.ddLon.setText(str(ddmConvert.ddEasting))
@@ -180,15 +182,18 @@ class transformCoords(QWidget):
         
 
     def transform_btn_pressed(self):
-        lon = float(self.ddLon.text())
-        lat = float(self.ddLat.text())
-        epsgSource = int(self.epsgSource.currentText())
-        epsgTarget = int(self.epsgTarget.currentText())
+      
+        try:
+            lon = float(self.ddLon.text())
+            lat = float(self.ddLat.text())
+            epsgSource = int(self.epsgSource.currentText())
+            epsgTarget = int(self.epsgTarget.currentText())
+            transformedCoords = coord_converter.Conversions.transform_coords(lon, lat, epsgSource, epsgTarget)
+            self.transformOutputBox.setText(str(transformedCoords))
+        except Exception as e:
+            print("error: ", e)
+            self.transformOutputBox.setText("please check given coords and EPSG codes")
         
-        # print("lon: ", lon, "\nlat: ", lat, "\nepsgsource: ", epsgSource, "\nepsgtarget: ", epsgTarget)
-
-        transformedCoords = coord_converter.Conversions.transform_coords(lon, lat, epsgSource, epsgTarget)
-        self.transformOutputBox.setText(str(transformedCoords))
 
 class bulkConversion(QWidget):
     def __init__(self):
@@ -317,7 +322,7 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                # print(self.df)
+
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
@@ -330,7 +335,7 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                # print(self.df)
+
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
@@ -343,14 +348,14 @@ class bulkConversion(QWidget):
                 self.easting.addItems(self.df.columns)
                 self.northing.addItems(self.df.columns)
                 self.z.addItems(self.df.columns)
-                # print(self.df)
+
             except:
                 print("read failed")
                 self.inputFileLabel.setText("file import failed")
                 pass
             
     def z_box_checked(self, s):
-        # print(s == Qt.CheckState.Checked.value)
+
         if s == Qt.CheckState.Checked.value:
             
             self.z.setVisible(True)
@@ -362,63 +367,62 @@ class bulkConversion(QWidget):
         self.outPath = outputFile[0].toLocalFile()
         self.outputFileLabel.setText(outputFile[0].fileName())
 
-        # print(self.outPath)
-
     def submit_btn_pressed(self):
+        try:
+            if hasattr(self, "outPath") and hasattr(self, "df"): # check that the filepaths have been selected
+                outdf = self.df.copy()
 
-        if hasattr(self, "outPath") or hasattr(self, "df"): # check that the filepaths have been selected
-            outdf = self.df.copy()
+                useZ = self.checkZ.isChecked()
+                noAppend = self.checkAppend.isChecked()
+                noPreserve = self.checkPreserve.isChecked()
+                eastingCol = self.easting.currentText()
+                northingCol = self.northing.currentText()
+                useDDM = self.ddmCheck.isChecked()
 
-            useZ = self.checkZ.isChecked()
-            noAppend = self.checkAppend.isChecked()
-            noPreserve = self.checkPreserve.isChecked()
-            eastingCol = self.easting.currentText()
-            northingCol = self.northing.currentText()
-            useDDM = self.ddmCheck.isChecked()
+                if useZ:
+                    zCol = self.z.currentText()
 
-            if useZ:
-                zCol = self.z.currentText()
+                epsgSource = self.epsgSource.currentText()
+                epsgTarget = self.epsgTarget.currentText()
 
-            epsgSource = self.epsgSource.currentText()
-            epsgTarget = self.epsgTarget.currentText()
+                if useDDM:
+                    outdf["eastDD"] = outdf[eastingCol].apply(coord_converter.Conversions.ddm_to_dd)
+                    outdf["northDD"] = outdf[northingCol].apply(coord_converter.Conversions.ddm_to_dd)
+                    outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row["eastDD"], row["northDD"], epsgSource, epsgTarget), axis=1))
+                else:
+                    # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
+                    outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
 
-            if useDDM:
-                outdf["eastDD"] = outdf[eastingCol].apply(coord_converter.Conversions.ddm_to_dd)
-                outdf["northDD"] = outdf[northingCol].apply(coord_converter.Conversions.ddm_to_dd)
-                outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row["eastDD"], row["northDD"], epsgSource, epsgTarget), axis=1))
+                options = [useZ, noAppend, noPreserve]
+                e = False # use to cleanly display case match outcome
+
+                match options:
+                    case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
+                        outdf[["easting", "northing", zCol]].to_csv(self.outPath, index=False)
+
+                    case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
+                        outdf[["easting", "northing"]].to_csv(self.outPath, index=False)
+
+                    case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
+                        outdf[eastingCol], outdf[northingCol] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
+                        outdf.to_csv(self.outPath, index=False)
+
+                    case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
+                        outdf.to_csv(self.outPath, index=False)
+
+                    case _:
+                        e = True
+                
+                if e:
+                    print("something went wrong")
+                    self.outputLabel.setText("something went wrong")
+                else:
+                    self.outputLabel.setText("output saved to " + self.outPath)
             else:
-                # create new columns regardless. export options change which columns make the final df from this one call of transform_coords
-                outdf["easting"], outdf["northing"] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
-
-            options = [useZ, noAppend, noPreserve]
-            e = False # use to cleanly display case match outcome
-            # print(outdf)
-
-            match options:
-                case [True, _, True]:  # case where we only export x,y,z. append option does not matter in this case. everything gets overridden
-                    # print("case 1. x,y,z only")
-                    outdf[["easting", "northing", zCol]].to_csv(self.outPath, index=False)
-                case [False, _, True]: # case where we only export x,y and ignore the z column. append option does not matter here either.
-                    # print("case 2. x,y only")
-                    outdf[["easting", "northing"]].to_csv(self.outPath, index=False)
-                case [_, True, False]: # case where we export all columns but replace the original columns with the new transformations
-                    # print("case 3. all cols, dont append- replace")
-                    outdf[eastingCol], outdf[northingCol] = zip(*outdf.apply(lambda row: coord_converter.Conversions.transform_coords(row[eastingCol], row[northingCol], epsgSource, epsgTarget), axis=1))
-                    outdf.to_csv(self.outPath, index=False)
-                case [_, False, False]:  # case where we create new columns and append them to the end. z option does not matter here.
-                    # print("case 4. all cols, append to preserve og data")
-                    outdf.to_csv(self.outPath, index=False)
-                case _:
-                    e = True
-            
-            if e:
-                print("something went wrong")
-                self.outputLabel.setText("something went wrong")
-            else:
-                self.outputLabel.setText("output saved to " + self.outPath)
-        else:
-            self.outputLabel.setText("enter in all the information!")
-            
+                self.outputLabel.setText("enter in all the information!")
+        except Exception as exception:
+            print("error: ", exception)
+            self.outputLabel.setText("fatal error occured. check all parameters")
             
 
 if __name__ == "__main__":
