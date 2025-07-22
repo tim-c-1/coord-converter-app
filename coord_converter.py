@@ -21,7 +21,7 @@
 
 # import pandas as pd
 from osgeo import osr
-
+osr.UseExceptions()
 
 # input_file = input("file to convert: ")
 # output_file = input_file[:-4] + "_reduced.csv"
