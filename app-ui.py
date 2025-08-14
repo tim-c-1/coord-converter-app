@@ -175,7 +175,6 @@ class transformCoords(QWidget):
         if s == Qt.CheckState.Checked.value:
             self.ddLat.setText(str(ddmConvert.ddNorthing))
             self.ddLon.setText(str(ddmConvert.ddEasting))
-            print(ddmConvert.ddNorthing)
         else:
             self.ddLat.clear()
             self.ddLon.clear()

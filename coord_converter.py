@@ -48,14 +48,18 @@ class Conversions():
             return None
     
     def transform_coords(lon, lat, source_epsg="4326", target_epsg="26918"):
-        source_srs = osr.SpatialReference()
-        source_srs.ImportFromEPSG(int(source_epsg))
+        try:
+            source_srs = osr.SpatialReference()
+            source_srs.ImportFromEPSG(int(source_epsg))
 
-        target_srs = osr.SpatialReference()
-        target_srs.ImportFromEPSG(int(target_epsg))
+            target_srs = osr.SpatialReference()
+            target_srs.ImportFromEPSG(int(target_epsg))
 
-        transform = osr.CoordinateTransformation(source_srs, target_srs)
+            transform = osr.CoordinateTransformation(source_srs, target_srs)
 
-        utm_x, utm_y, _ = transform.TransformPoint(lon,lat)
+            utm_x, utm_y, _ = transform.TransformPoint(lon,lat)
 
-        return utm_x, utm_y
+            return utm_x, utm_y
+        except Exception as e:
+            print(f"Error: {e}")
+            return None
